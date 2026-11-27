@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>간단 견적·정산 계산기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-soft: #eff6ff;
+      --success: #059669;
+      --danger: #dc2626;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.55;
+      padding: 24px 16px 48px;
+    }
+
+    .app {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      color: #ffffff;
+      border-radius: 18px;
+      padding: 26px 24px;
+      margin-bottom: 18px;
+      box-shadow: 0 10px 25px -12px rgba(15, 23, 42, 0.35);
+    }
+
+    .hero-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.16);
+      color: #dbeafe;
+      padding: 3px 10px;
+      border-radius: 99px;
+      margin-bottom: 8px;
+    }
+
+    .hero h1 {
+      font-size: 24px;
+      font-weight: 900;
+      margin-bottom: 6px;
+      letter-spacing: -0.3px;
+    }
+
+    .hero p {
+      font-size: 14px;
+      color: #cbd5e1;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 14px -10px rgba(15, 23, 42, 0.18);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      transition: all 0.15s ease;
+    }
+
+    button:active { transform: scale(0.99); }
+
+    .btn-sm {
+      padding: 7px 12px;
+      font-size: 13px;
+    }
+
+    .btn-outline {
+      background: #ffffff;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      padding: 10px 16px;
+      font-size: 14px;
+    }
+
+    .btn-primary:hover { background: var(--primary-dark); }
+
+    .btn-success {
+      background: var(--success);
+      color: #ffffff;
+      padding: 10px 16px;
+      font-size: 14px;
+    }
+
+    .btn-success:hover { background: #047857; }
+
+    /* 모드 전환 */
+    .mode-tabs {
+      display: inline-flex;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 11px;
+      border: 1px solid var(--line);
+      margin-bottom: 14px;
+    }
+
+    .mode-tab {
+      padding: 7px 14px;
+      font-size: 13px;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 8px;
+    }
+
+    .mode-tab.active {
+      background: #ffffff;
+      color: var(--primary);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+    }
+
+    /* 항목 리스트 */
+    .item-row {
+      display: grid;
+      grid-template-columns: 2.2fr 1.2fr 0.8fr 1fr auto;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .item-labels {
+      display: grid;
+      grid-template-columns: 2.2fr 1.2fr 0.8fr 1fr auto;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 6px;
+      padding-right: 36px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--line);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--ink);
+      background: #ffffff;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .line-subtotal {
+      font-size: 13px;
+      font-weight: 700;
+      text-align: right;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    .btn-remove {
+      width: 34px;
+      height: 38px;
+      background: #fef2f2;
+      color: var(--danger);
+      border: 1px solid #fecaca;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-remove:hover { background: #fee2e2; }
+
+    .direct-total-box {
+      display: none;
+      padding: 14px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+
+    .direct-total-box.active { display: block; }
+    .items-box { display: none; }
+    .items-box.active { display: block; }
+
+    /* 정산 인원 & 옵션 */
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+
+    .check-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .check-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .ratio-box {
+      display: none;
+      margin-top: 14px;
+      padding: 14px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+
+    .ratio-box.active { display: block; }
+
+    .ratio-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .ratio-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 13px;
+    }
+
+    .ratio-chip input {
+      width: 68px;
+      padding: 6px 8px;
+      text-align: right;
+    }
+
+    /* 요약 카드 */
+    .summary-top {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .highlight-box {
+      background: var(--primary-soft);
+      border: 1px solid #bfdbfe;
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    .highlight-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin-bottom: 4px;
+    }
+
+    .highlight-amount {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--primary);
+      letter-spacing: -0.5px;
+    }
+
+    .breakdown-box {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    .breakdown-line {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .breakdown-line.total {
+      padding-top: 6px;
+      border-top: 1px dashed #cbd5e1;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .member-results {
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      display: none;
+    }
+
+    .member-results.show { display: block; }
+
+    .member-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 4px 0;
+      border-bottom: 1px solid #eef2f6;
+    }
+
+    .member-row:last-child { border-bottom: none; }
+
+    .message-area {
+      width: 100%;
+      min-height: 112px;
+      resize: vertical;
+      font-size: 13.5px;
+      line-height: 1.6;
+      background: #f8fafc;
+      margin-bottom: 10px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #0f172a;
+      color: #ffffff;
+      padding: 11px 20px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      font-weight: 700;
+      opacity: 0;
+      transition: all 0.25s ease;
+      z-index: 100;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    @media (max-width: 640px) {
+      .item-labels { display: none; }
+      .item-row {
+        grid-template-columns: 1fr 1fr;
+        background: #f8fafc;
+        padding: 10px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+      }
+      .item-row .item-name { grid-column: 1 / -1; }
+      .line-subtotal { text-align: left; }
+      .btn-remove { justify-self: end; }
+      .summary-top { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="hero">
+      <span class="hero-badge">모임 정산 · 행사 견적 초안</span>
+      <h1>간단 견적·정산 계산기</h1>
+      <p>항목별 금액이나 총액을 입력하고 인원·비율을 맞추면 1인당 정산 금액과 안내 문구가 자동 생성됩니다.</p>
+    </header>
+
+    <!-- 1. 금액 입력 -->
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">1. 비용 및 견적 항목</h2>
+        <div class="btn-group">
+          <button type="button" class="btn-sm btn-outline" onclick="loadSample()">예시 채우기</button>
+          <button type="button" class="btn-sm btn-outline" onclick="resetAll()">초기화</button>
+        </div>
+      </div>
+
+      <div class="mode-tabs" role="tablist">
+        <button type="button" class="mode-tab active" id="tab-items" onclick="setInputMode('items')">항목별 여러 줄 입력</button>
+        <button type="button" class="mode-tab" id="tab-direct" onclick="setInputMode('direct')">총액 직접 입력</button>
+      </div>
+
+      <div id="items-section" class="items-box active">
+        <div class="item-labels">
+          <span>항목명</span>
+          <span>금액(원)</span>
+          <span>수량</span>
+          <span style="text-align:right;">소계</span>
+          <span></span>
+        </div>
+        <div id="items-list"></div>
+        <div style="margin-top: 10px;">
+          <button type="button" class="btn-sm btn-outline" onclick="addItemRow()">+ 항목 줄 추가</button>
+        </div>
+      </div>
+
+      <div id="direct-section" class="direct-total-box">
+        <div class="field">
+          <label for="direct-total-input">정산·견적 총액 (원)</label>
+          <input type="number" id="direct-total-input" min="0" step="100" value="120000" oninput="calculate()" />
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 정산 인원 및 비율 -->
+    <section class="card">
+      <h2 class="card-title" style="margin-bottom: 14px;">2. 정산 인원 · 단가 옵션</h2>
+
+      <div class="options-grid">
+        <div class="field">
+          <label for="event-title">모임·행사명 (선택)</label>
+          <input type="text" id="event-title" placeholder="예: 워크숍 저녁 모임" value="워크숍 저녁 모임" oninput="calculate()" />
+        </div>
+        <div class="field">
+          <label for="people-count">정산 인원 (명)</label>
+          <input type="number" id="people-count" min="1" step="1" value="4" oninput="syncRatioInputs(); calculate();" />
+        </div>
+        <div class="field">
+          <label for="rounding-mode">1인당 금액 단수 처리</label>
+          <select id="rounding-mode" onchange="calculate()">
+            <option value="none">원 단위 그대로</option>
+            <option value="ceil10">10원 단위 올림</option>
+            <option value="ceil100" selected>100원 단위 올림</option>
+            <option value="round100">100원 단위 반올림</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="check-row">
+        <label class="check-label">
+          <input type="checkbox" id="vat-toggle" onchange="calculate()" />
+          <span>부가세(VAT 10%) 별도 추가</span>
+        </label>
+        <label class="check-label">
+          <input type="checkbox" id="ratio-toggle" onchange="toggleRatioBox(); calculate();" />
+          <span>인원별 차등 비율(N분의 1 외) 정산</span>
+        </label>
+      </div>
+
+      <div id="ratio-section" class="ratio-box">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <strong style="font-size:13px;">참여자별 비율(가중치) 입력</strong>
+          <span style="font-size:12px; color:var(--muted);">예: 1, 1, 1, 0.5 (반값 참여 시 0.5)</span>
+        </div>
+        <div id="ratio-list" class="ratio-list"></div>
+      </div>
+    </section>
+
+    <!-- 3. 정산 결과 및 안내 문구 -->
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">3. 정산 요약 및 안내 문구</h2>
+        <button type="button" class="btn-success" onclick="copyMessage()">안내 문구 복사</button>
+      </div>
+
+      <div class="summary-top">
+        <div class="highlight-box">
+          <div class="highlight-label" id="per-person-label">1인당 정산 금액 (4명 기준)</div>
+          <div class="highlight-amount" id="per-person-amount">0원</div>
+        </div>
+        <div class="breakdown-box">
+          <div class="breakdown-line">
+            <span>항목 소계</span>
+            <span id="subtotal-display">0원</span>
+          </div>
+          <div class="breakdown-line">
+            <span>부가세 (10%)</span>
+            <span id="vat-display">0원</span>
+          </div>
+          <div class="breakdown-line total">
+            <span>최종 합계</span>
+            <span id="grand-total-display">0원</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="member-breakdown" class="member-results"></div>
+
+      <label for="share-message" style="display:block; font-size:13px; font-weight:700; margin-bottom:6px;">
+        공유용 정산 안내 문구
+      </label>
+      <textarea id="share-message" class="message-area" readonly></textarea>
+      <div style="display:flex; justify-content:flex-end;">
+        <button type="button" class="btn-primary" onclick="copyMessage()">복사하기</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast">복사되었습니다.</div>
+
+  <script>
+    let inputMode = 'items';
+
+    const initialItems = [
+      { name: '식사 및 음료', price: 120000, qty: 1 },
+      { name: '다과·커피 박스', price: 18000, qty: 2 }
+    ];
+
+    function formatWon(num) {
+      return Math.round(Number(num) || 0).toLocaleString('ko-KR') + '원';
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById('toast');
+      toast.textContent = text;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    function addItemRow(name = '', price = '', qty = 1) {
+      const list = document.getElementById('items-list');
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = `
+        <input type="text" class="item-name" placeholder="예: 대관료, 식대" value="${name.replace(/"/g, '&quot;')}" oninput="calculate()" />
+        <input type="number" class="item-price" placeholder="금액" min="0" step="100" value="${price}" oninput="calculate()" />
+        <input type="number" class="item-qty" placeholder="수량" min="1" step="1" value="${qty}" oninput="calculate()" />
+        <div class="line-subtotal">0원</div>
+        <button type="button" class="btn-remove" title="항목 삭제" aria-label="항목 삭제" onclick="removeItemRow(this)">✕</button>
+      `;
+      list.appendChild(row);
+      calculate();
+    }
+
+    function removeItemRow(btn) {
+      const list = document.getElementById('items-list');
+      if (list.children.length <= 1) {
+        const row = btn.closest('.item-row');
+        row.querySelector('.item-name').value = '';
+        row.querySelector('.item-price').value = '';
+        row.querySelector('.item-qty').value = 1;
+        calculate();
+        return;
+      }
+      btn.closest('.item-row').remove();
+      calculate();
+    }
+
+    function setInputMode(mode) {
+      inputMode = mode;
+      document.getElementById('tab-items').classList.toggle('active', mode === 'items');
+      document.getElementById('tab-direct').classList.toggle('active', mode === 'direct');
+      document.getElementById('items-section').classList.toggle('active', mode === 'items');
+      document.getElementById('direct-section').classList.toggle('active', mode === 'direct');
+      calculate();
+    }
+
+    function toggleRatioBox() {
+      const enabled = document.getElementById('ratio-toggle').checked;
+      document.getElementById('ratio-section').classList.toggle('active', enabled);
+      if (enabled) syncRatioInputs();
+    }
+
+    function syncRatioInputs() {
+      const count = Math.max(1, Math.min(50, parseInt(document.getElementById('people-count').value, 10) || 1));
+      const container = document.getElementById('ratio-list');
+      const existingValues = Array.from(container.querySelectorAll('input.ratio-val')).map(el => el.value);
+
+      container.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const val = existingValues[i] !== undefined ? existingValues[i] : '1';
+        const chip = document.createElement('div');
+        chip.className = 'ratio-chip';
+        chip.innerHTML = `
+          <span>참여자 ${i + 1}</span>
+          <input type="number" class="ratio-val" min="0" step="0.5" value="${val}" oninput="calculate()" />
+          <span>비율</span>
+        `;
+        container.appendChild(chip);
+      }
+    }
+
+    function applyRounding(amount, mode) {
+      if (amount <= 0) return 0;
+      if (mode === 'ceil10') return Math.ceil(amount / 10) * 10;
+      if (mode === 'ceil100') return Math.ceil(amount / 100) * 100;
+      if (mode === 'round100') return Math.round(amount / 100) * 100;
+      return Math.round(amount);
+    }
+
+    function calculate() {
+      let subtotal = 0;
+      const itemSummaries = [];
+
+      if (inputMode === 'items') {
+        document.querySelectorAll('#items-list .item-row').forEach(row => {
+          const name = row.querySelector('.item-name').value.trim() || '항목';
+          const price = Math.max(0, parseFloat(row.querySelector('.item-price').value) || 0);
+          const qty = Math.max(1, parseFloat(row.querySelector('.item-qty').value) || 1);
+          const lineTotal = price * qty;
+          row.querySelector('.line-subtotal').textContent = formatWon(lineTotal);
+          subtotal += lineTotal;
+          if (lineTotal > 0 || row.querySelector('.item-name').value.trim() !== '') {
+            itemSummaries.push({ name, price, qty, lineTotal });
+          }
+        });
+      } else {
+        subtotal = Math.max(0, parseFloat(document.getElementById('direct-total-input').value) || 0);
+      }
+
+      const vatEnabled = document.getElementById('vat-toggle').checked;
+      const vat = vatEnabled ? Math.round(subtotal * 0.1) : 0;
+      const grandTotal = subtotal + vat;
+
+      const people = Math.max(1, parseInt(document.getElementById('people-count').value, 10) || 1);
+      const rounding = document.getElementById('rounding-mode').value;
+      const ratioEnabled = document.getElementById('ratio-toggle').checked;
+      const title = document.getElementById('event-title').value.trim();
+
+      document.getElementById('subtotal-display').textContent = formatWon(subtotal);
+      document.getElementById('vat-display').textContent = formatWon(vat);
+      document.getElementById('grand-total-display').textContent = formatWon(grandTotal);
+
+      const memberBox = document.getElementById('member-breakdown');
+      let messageLines = [];
+
+      if (title) messageLines.push(`[${title} 정산 안내]`);
+      else messageLines.push('[정산 안내]');
+
+      if (inputMode === 'items' && itemSummaries.length > 0) {
+        const detailText = itemSummaries
+          .map(it => `- ${it.name}: ${formatWon(it.price)} × ${it.qty} = ${formatWon(it.lineTotal)}`)
+          .join('\n');
+        messageLines.push(detailText);
+      }
+
+      if (vatEnabled) {
+        messageLines.push(`소계 ${formatWon(subtotal)} + 부가세(10%) ${formatWon(vat)} = 총 ${formatWon(grandTotal)}`);
+      } else {
+        messageLines.push(`총 합계: ${formatWon(grandTotal)}`);
+      }
+
+      if (ratioEnabled) {
+        const ratioInputs = Array.from(document.querySelectorAll('#ratio-list input.ratio-val'));
+        const ratios = ratioInputs.map(el => Math.max(0, parseFloat(el.value) || 0));
+        const ratioSum = ratios.reduce((a, b) => a + b, 0);
+
+        document.getElementById('per-person-label').textContent = `비율 정산 (${people}명 · 총 비율 ${ratioSum || 0})`;
+        document.getElementById('per-person-amount').textContent =
+          ratioSum > 0 ? formatWon(applyRounding(grandTotal / ratioSum, rounding)) + ' / 1비율' : '0원';
+
+        memberBox.classList.add('show');
+        if (ratioSum <= 0) {
+          memberBox.innerHTML = '<div style="font-size:13px; color:var(--muted);">비율 합계가 0보다 커야 금액이 계산됩니다.</div>';
+        } else {
+          const rowsHtml = ratios.map((r, idx) => {
+            const rawShare = (grandTotal * r) / ratioSum;
+            const finalShare = applyRounding(rawShare, rounding);
+            return `<div class="member-row"><span>참여자 ${idx + 1} (비율 ${r})</span><strong>${formatWon(finalShare)}</strong></div>`;
+          }).join('');
+          memberBox.innerHTML = rowsHtml;
+
+          const msgShare = ratios.map((r, idx) => {
+            const finalShare = applyRounding((grandTotal * r) / ratioSum, rounding);
+            return `참여자 ${idx + 1}(비율 ${r}): ${formatWon(finalShare)}`;
+          }).join(' / ');
+          messageLines.push(`정산 내역 (${people}명): ${msgShare}`);
+        }
+      } else {
+        memberBox.classList.remove('show');
+        const perPerson = applyRounding(grandTotal / people, rounding);
+        document.getElementById('per-person-label').textContent = `1인당 정산 금액 (${people}명 기준)`;
+        document.getElementById('per-person-amount').textContent = formatWon(perPerson);
+        messageLines.push(`정산 인원: ${people}명 → 1인당 ${formatWon(perPerson)}`);
+      }
+
+      document.getElementById('share-message').value = messageLines.join('\n');
+    }
+
+    function copyMessage() {
+      const msg = document.getElementById('share-message').value;
+      if (!msg.trim()) return;
+      navigator.clipboard.writeText(msg).then(() => {
+        showToast('정산 안내 문구가 복사되었습니다.');
+      }).catch(() => {
+        const ta = document.getElementById('share-message');
+        ta.select();
+        document.execCommand('copy');
+        showToast('정산 안내 문구가 복사되었습니다.');
+      });
+    }
+
+    function loadSample() {
+      setInputMode('items');
+      document.getElementById('event-title').value = '워크숍 저녁 모임';
+      document.getElementById('people-count').value = 4;
+      document.getElementById('vat-toggle').checked = false;
+      document.getElementById('ratio-toggle').checked = false;
+      toggleRatioBox();
+
+      const list = document.getElementById('items-list');
+      list.innerHTML = '';
+      initialItems.forEach(item => addItemRow(item.name, item.price, item.qty));
+      calculate();
+      showToast('예시 항목을 채웠습니다.');
+    }
+
+    function resetAll() {
+      setInputMode('items');
+      document.getElementById('event-title').value = '';
+      document.getElementById('people-count').value = 2;
+      document.getElementById('direct-total-input').value = 0;
+      document.getElementById('vat-toggle').checked = false;
+      document.getElementById('ratio-toggle').checked = false;
+      toggleRatioBox();
+
+      const list = document.getElementById('items-list');
+      list.innerHTML = '';
+      addItemRow('', '', 1);
+      calculate();
+      showToast('초기화되었습니다.');
+    }
+
+    // 초기 화면 구성
+    initialItems.forEach(item => addItemRow(item.name, item.price, item.qty));
+    syncRatioInputs();
+    calculate();
+  </script>
+</body>
+</html>
