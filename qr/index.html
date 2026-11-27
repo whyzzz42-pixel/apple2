@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR 코드 생성기 & 리더기</title>
+  <!-- QR 코드 생성 및 스캔 라이브러리 (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --success: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 20px 16px;
+    }
+
+    .container {
+      max-width: 560px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 20px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    header {
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      color: #fff;
+      padding: 28px 24px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 24px;
+      font-weight: 900;
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+
+    header p {
+      font-size: 14px;
+      color: #dbeafe;
+    }
+
+    /* 탭 메뉴 */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: #f8fafc;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 15px;
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      border-bottom: 3px solid transparent;
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+      background: #fff;
+      border-bottom-color: var(--primary);
+    }
+
+    .tab-content {
+      display: none;
+      padding: 24px;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* 입력 및 옵션 스타일 */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    input[type="text"], textarea, select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .options-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .color-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 6px 10px;
+      height: 44px;
+    }
+
+    input[type="color"] {
+      border: none;
+      width: 28px;
+      height: 28px;
+      background: none;
+      cursor: pointer;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn:active { transform: scale(0.99); }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: var(--primary-dark); }
+
+    .btn-secondary {
+      background: #e2e8f0;
+      color: var(--text);
+    }
+
+    .btn-secondary:hover { background: #cbd5e1; }
+
+    .btn-success {
+      background: var(--success);
+      color: #fff;
+    }
+
+    /* QR 결과 영역 */
+    .qr-result-box {
+      margin-top: 24px;
+      padding: 24px;
+      background: #f8fafc;
+      border-radius: 16px;
+      border: 1px dashed #cbd5e1;
+      text-align: center;
+      display: none;
+    }
+
+    .qr-result-box.show { display: block; }
+
+    #qrcode {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      margin-bottom: 16px;
+    }
+
+    #qrcode img, #qrcode canvas {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .action-btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* QR 리더기 영역 */
+    .reader-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    #reader {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #000;
+      margin-bottom: 16px;
+    }
+
+    .scan-result-card {
+      background: #f0fdf4;
+      border: 1.5px solid #86efac;
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 16px;
+      display: none;
+    }
+
+    .scan-result-card.show { display: block; }
+
+    .scan-result-text {
+      word-break: break-all;
+      font-size: 15px;
+      font-weight: 500;
+      background: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #dcfce7;
+      margin: 10px 0 14px;
+    }
+
+    /* 최근 기록 */
+    .history-section {
+      margin-top: 24px;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .history-list {
+      list-style: none;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      gap: 10px;
+    }
+
+    .history-item span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .mini-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+    }
+
+    /* 토스트 알림 */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1e293b;
+      color: #fff;
+      padding: 12px 22px;
+      border-radius: 99px;
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 999;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>QR 만들기 · 읽기</h1>
+    <p>웹 주소, 텍스트를 QR로 만들고 카메라·이미지로 바로 스캔하세요</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('create')">QR 코드 만들기</button>
+    <button class="tab-btn" onclick="switchTab('scan')">QR 코드 읽기</button>
+  </div>
+
+  <!-- 탭 1: QR 생성 -->
+  <div id="tab-create" class="tab-content active">
+    <div class="form-group">
+      <label for="qr-input">내용 입력 (URL, 텍스트, 전화번호 등)</label>
+      <textarea id="qr-input" rows="3" placeholder="예: https://github.com 또는 전달할 메시지를 입력하세요"></textarea>
+    </div>
+
+    <div class="options-row">
+      <div>
+        <label>QR 색상</label>
+        <div class="color-input-wrap">
+          <input type="color" id="qr-fg" value="#0f172a">
+          <span style="font-size:12px; color:var(--muted);">코드색</span>
+        </div>
+      </div>
+      <div>
+        <label>배경 색상</label>
+        <div class="color-input-wrap">
+          <input type="color" id="qr-bg" value="#ffffff">
+          <span style="font-size:12px; color:var(--muted);">배경색</span>
+        </div>
+      </div>
+      <div>
+        <label for="qr-size">저장 크기</label>
+        <select id="qr-size">
+          <option value="256">보통 (256px)</option>
+          <option value="512" selected>고화질 (512px)</option>
+          <option value="1024">초고화질 (1024px)</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="generateQR()">QR 코드 생성하기</button>
+
+    <div id="qr-result-box" class="qr-result-box">
+      <div id="qrcode"></div>
+      <div class="action-btns">
+        <button class="btn btn-success" onclick="downloadQR()">PNG 이미지 저장</button>
+        <button class="btn btn-secondary" onclick="copyQRImage()">이미지 복사</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 탭 2: QR 읽기 -->
+  <div id="tab-scan" class="tab-content">
+    <div class="reader-controls">
+      <button class="btn btn-primary" id="cam-btn" onclick="toggleCamera()">📷 카메라 스캔 시작</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('qr-file-input').click()">🖼️ 이미지 파일 선택</button>
+      <input type="file" id="qr-file-input" accept="image/*" style="display:none" onchange="scanFromFile(event)">
+    </div>
+
+    <div id="reader"></div>
+
+    <div id="scan-result-card" class="scan-result-card">
+      <strong style="color:#15803d; font-size:14px;">✅ 스캔 완료!</strong>
+      <div id="scan-result-text" class="scan-result-text"></div>
+      <div class="action-btns">
+        <button class="btn btn-primary" id="open-link-btn" onclick="openScannedLink()" style="display:none;">🔗 링크 열기</button>
+        <button class="btn btn-secondary" onclick="copyScannedText()">📋 내용 복사</button>
+      </div>
+    </div>
+
+    <div class="history-section">
+      <div class="history-header">
+        <label style="margin:0;">최근 스캔 기록</label>
+        <button class="mini-btn" onclick="clearHistory()">기록 삭제</button>
+      </div>
+      <ul id="history-list" class="history-list"></ul>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast">알림 메시지</div>
+
+<script>
+  let html5QrCode = null;
+  let isCameraRunning = false;
+  let lastScannedText = "";
+
+  // 토스트 메시지 표시
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  // 탭 전환
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+    if (tab === 'create') {
+      document.querySelectorAll('.tab-btn')[0].classList.add('active');
+      document.getElementById('tab-create').classList.add('active');
+      stopCamera();
+    } else {
+      document.querySelectorAll('.tab-btn')[1].classList.add('active');
+      document.getElementById('tab-scan').classList.add('active');
+      renderHistory();
+    }
+  }
+
+  // QR 코드 생성
+  function generateQR() {
+    const text = document.getElementById('qr-input').value.trim();
+    if (!text) {
+      showToast('QR 코드로 만들 내용을 입력해 주세요!');
+      return;
+    }
+
+    const fg = document.getElementById('qr-fg').value;
+    const bg = document.getElementById('qr-bg').value;
+    const size = parseInt(document.getElementById('qr-size').value, 10);
+
+    const qrContainer = document.getElementById('qrcode');
+    qrContainer.innerHTML = '';
+
+    new QRCode(qrContainer, {
+      text: text,
+      width: size,
+      height: size,
+      colorDark: fg,
+      colorLight: bg,
+      correctLevel: QRCode.CorrectLevel.H
+    });
+
+    document.getElementById('qr-result-box').classList.add('show');
+    showToast('QR 코드가 생성되었습니다.');
+  }
+
+  // QR PNG 다운로드
+  function downloadQR() {
+    const canvas = document.querySelector('#qrcode canvas');
+    const img = document.querySelector('#qrcode img');
+    const dataUrl = canvas ? canvas.toDataURL('image/png') : (img ? img.src : null);
+
+    if (!dataUrl) return;
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = 'qrcode_' + Date.now() + '.png';
+    link.click();
+    showToast('PNG 파일로 저장되었습니다.');
+  }
+
+  // QR 이미지 클립보드 복사
+  async function copyQRImage() {
+    const canvas = document.querySelector('#qrcode canvas');
+    if (!canvas) return;
+    try {
+      canvas.toBlob(async (blob) => {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        showToast('QR 이미지가 클립보드에 복사되었습니다.');
+      });
+    } catch (err) {
+      showToast('브라우저 보안 정책상 이미지 복사가 제한되었습니다. 저장 버튼을 이용해 주세요.');
+    }
+  }
+
+  // 카메라 스캔 토글
+  async function toggleCamera() {
+    if (isCameraRunning) {
+      await stopCamera();
+    } else {
+      startCamera();
+    }
+  }
+
+  function startCamera() {
+    if (!html5QrCode) {
+      html5QrCode = new Html5Qrcode("reader");
+    }
+    const camBtn = document.getElementById('cam-btn');
+    camBtn.textContent = "⏹️ 카메라 중지";
+
+    html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 220, height: 220 } },
+      (decodedText) => {
+        handleScanSuccess(decodedText);
+        stopCamera();
+      },
+      () => {}
+    ).then(() => {
+      isCameraRunning = true;
+    }).catch(() => {
+      camBtn.textContent = "📷 카메라 스캔 시작";
+      showToast('카메라 권한이 없거나 HTTPS 환경이 아닙니다.');
+    });
+  }
+
+  async function stopCamera() {
+    if (html5QrCode && isCameraRunning) {
+      await html5QrCode.stop();
+      isCameraRunning = false;
+      document.getElementById('cam-btn').textContent = "📷 카메라 스캔 시작";
+    }
+  }
+
+  // 이미지 파일에서 QR 스캔
+  function scanFromFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!html5QrCode) {
+      html5QrCode = new Html5Qrcode("reader");
+    }
+
+    html5QrCode.scanFile(file, true)
+      .then(decodedText => handleScanSuccess(decodedText))
+      .catch(() => showToast('이미지에서 QR 코드를 찾지 못했습니다.'));
+    event.target.value = '';
+  }
+
+  // 스캔 성공 처리
+  function handleScanSuccess(text) {
+    lastScannedText = text;
+    document.getElementById('scan-result-text').textContent = text;
+    document.getElementById('scan-result-card').classList.add('show');
+
+    const isUrl = /^https?:\/\//i.test(text);
+    document.getElementById('open-link-btn').style.display = isUrl ? 'block' : 'none';
+
+    saveHistory(text);
+    showToast('QR 코드를 성공적으로 읽었습니다!');
+  }
+
+  function openScannedLink() {
+    if (lastScannedText) window.open(lastScannedText, '_blank');
+  }
+
+  function copyScannedText() {
+    if (!lastScannedText) return;
+    navigator.clipboard.writeText(lastScannedText);
+    showToast('내용이 복사되었습니다.');
+  }
+
+  // 로컬 기록 관리
+  function saveHistory(text) {
+    let history = JSON.parse(localStorage.getItem('qr_scan_history') || '[]');
+    history = [text, ...history.filter(item => item !== text)].slice(0, 10);
+    localStorage.setItem('qr_scan_history', JSON.stringify(history));
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('history-list');
+    const history = JSON.parse(localStorage.getItem('qr_scan_history') || '[]');
+    if (history.length === 0) {
+      list.innerHTML = '<li style="font-size:13px; color:var(--muted); text-align:center; padding:12px;">아직 스캔한 기록이 없습니다.</li>';
+      return;
+    }
+    list.innerHTML = history.map(item => `
+      <li class="history-item">
+        <span title="${item}">${item}</span>
+        <button class="mini-btn" onclick="navigator.clipboard.writeText('${item.replace(/'/g, "\\'")}'); showToast('복사되었습니다.');">복사</button>
+      </li>
+    `).join('');
+  }
+
+  function clearHistory() {
+    localStorage.removeItem('qr_scan_history');
+    renderHistory();
+    showToast('스캔 기록이 삭제되었습니다.');
+  }
+</script>
+
+</body>
+</html>
