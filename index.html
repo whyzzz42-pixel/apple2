@@ -40,7 +40,7 @@
     header {
       background: var(--band);
       color: #ffffff;
-      padding: 32px 20px;
+      padding: 30px 20px;
       border-bottom: 1px solid var(--line);
     }
 
@@ -49,7 +49,7 @@
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 16px;
+      gap: 20px;
     }
 
     .brand-tag {
@@ -75,6 +75,48 @@
       margin: 0;
       color: #dbe4fa;
       font-size: 15px;
+    }
+
+    /* 상단 사용자 이모지(정사각형 라운드형) */
+    .user-emoji-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      padding: 8px 14px 8px 8px;
+      border-radius: 22px;
+    }
+
+    .user-emoji-avatar {
+      width: 64px;
+      height: 64px;
+      aspect-ratio: 1 / 1;
+      border-radius: 18px;
+      object-fit: cover;
+      display: block;
+      background: #1e3a8a;
+      border: 2px solid rgba(255, 255, 255, 0.65);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+    }
+
+    .user-emoji-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .user-emoji-badge {
+      font-size: 11px;
+      font-weight: 700;
+      color: #bfdbfe;
+      letter-spacing: 0.2px;
+    }
+
+    .user-emoji-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: #ffffff;
     }
 
     main {
@@ -220,6 +262,19 @@
         <span class="brand-tag">WEB APPS · BOARD</span>
         <h1>내 웹앱 모음 게시판</h1>
         <p>제작한 웹앱을 모아 두고 바로 실행할 수 있는 메인 페이지입니다.</p>
+      </div>
+
+      <div class="user-emoji-box" title="사용자 이모지">
+        <img
+          src="./mypicture.png"
+          alt="사용자 이모지"
+          class="user-emoji-avatar"
+          onerror="this.onerror=null; this.src='./mypicture.jpg';"
+        />
+        <div class="user-emoji-meta">
+          <span class="user-emoji-badge">MY EMOJI</span>
+          <span class="user-emoji-name">whyzzz42-pixel</span>
+        </div>
       </div>
     </div>
   </header>
